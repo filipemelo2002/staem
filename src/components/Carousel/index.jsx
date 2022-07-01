@@ -1,63 +1,97 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Container } from './styles';
+import { Container, CarouselContainer, DottedScroll } from './styles';
 import img1 from '../../assets/img1.jpg';
 import img2 from '../../assets/img2.jpg';
 import img3 from '../../assets/img3.jpg';
 
 const Carousel = () => {
+  const carouselRef = useRef()
   const [elements, setElements] = useState([
     {
-      src: img1,
-      isSelected: false
+      src: img1
     },
     {
       src: img2,
-      isSelected: true
     },
     {
       src: img3,
-      isSelected: false
+    },
+    {
+      src: img1,
+    },
+    {
+      src: img2,
     },
     {
       src: img3,
-      isSelected: false
+    },
+    {
+      src: img1,
+    },
+    {
+      src: img2,
     },
     {
       src: img3,
-      isSelected: false
     },
   ]);
 
-  const getCroppedArray = (array = []) => {
-    const selectedIndex = array.indexOf(array.find(el => el.isSelected));
-    const prevSelected = (selectedIndex - 1) % array.length;
-    const aftSelected = (selectedIndex + 1) % array.length;
-    return [array[prevSelected], array[selectedIndex], array[aftSelected]]
+  const [selectedItem, setSelectedItem] = useState(0);
+
+  const onScroll = (event)=>{
+    const wrappers = event.target.querySelectorAll('div');
+    const containerOffset = event.target.getBoundingClientRect();
+    wrappers.forEach((wrapper) => {
+      const imageOffset = wrapper.getBoundingClientRect();
+      const marginLeft = (imageOffset.x - containerOffset.x ) / containerOffset.width;
+      const image = wrapper.querySelector('img');
+      if (marginLeft <= 0.46 && marginLeft  >= (-0.13)) {
+        image.classList.add('grow')
+      } else {
+        image.classList.remove('grow')
+      }
+    })
   }
-  const renderedImages = useMemo(() => getCroppedArray(elements), [elements]);
 
-  const setSelected = (index) => {
-    
-    const newArray = elements.map((element, i) => {
-      return ({...element, isSelected: i === index}) 
-    });
-
-    setElements(newArray);
-  };
-
+  useEffect(() => {
+    if (carouselRef.current) {
+      const images = carouselRef.current.querySelectorAll('div');
+      images[selectedItem].scrollIntoView({
+          behavior: 'auto',
+          block: 'center',
+          inline: 'center'
+      });
+    }
+  }, [selectedItem])
   return (
     <Container>
-      {
-        renderedImages.map((element, index) => (
-          <img 
-            key={String(index)}
-            src={element.src} 
-            className={`${element.isSelected?"selected": ""}`}
-            onClick={() => setSelected(index)}
+      <CarouselContainer
+        onScroll={onScroll}
+        ref={carouselRef}
+      >
+        {
+          elements.map((element, index) => {
+            return(
+              <div  key={String(index)}>
+                <img 
+                  src={element.src} 
+                  className={index === 0 ? 'grow' : ''}
+                />
+              </div>
+          )})
+        }
+      </CarouselContainer>
+      <DottedScroll>
+        {
+          elements.map((element, index) => (
+            <li  
+              key={String(index)} onClick={() => setSelectedItem(index)}
+              className={ index === selectedItem ? 'selected' : ''}
             />
-        ))
-      }
+          ))
+        }
+      </DottedScroll>
     </Container>
   );
 }
